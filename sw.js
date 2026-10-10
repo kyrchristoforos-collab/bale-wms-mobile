@@ -1,14 +1,101 @@
-const CACHE='bale-wms-mobile-v2';
-const CORE=['./','./index.html','./style.css','./app.js','./firebase-config.js','./manifest.webmanifest','./icon.svg','./suppliers.txt'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k!==CACHE)await caches.delete(k);await self.clients.claim()})()));
-self.addEventListener('fetch',e=>{
-  if(e.request.method!=='GET')return;
-  const u=new URL(e.request.url);
-  if(u.origin===self.location.origin){
-    // Network-first so GitHub/Firebase deployments and suppliers.txt update promptly; cached app remains usable offline.
-    e.respondWith(fetch(e.request).then(r=>{if(r.ok){const copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r}).catch(()=>caches.match(e.request).then(x=>x||caches.match('./index.html'))));
+
+const CACHE = 'bale-wms-mobile-v3';
+
+const CORE = [
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './firebase-config.js',
+  './manifest.webmanifest',
+  './icon.svg',
+  './suppliers.txt'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache => cache.addAll(CORE))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+
+      await Promise.all(
+        keys
+          .filter(key => key.startsWith('bale-wms-mobile-') && key !== CACHE)
+          .map(key => caches.delete(key))
+      );
+
+      await self.clients.claim();
+    })()
+  );
+});
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      (async () => {
+        try {
+          const response = await fetch(request);
+
+          if (response.ok) {
+            const cache = await caches.open(CACHE);
+            await cache.put(request, response.clone());
+          }
+
+          return response;
+        } catch (error) {
+          const cached = await caches.match(request);
+
+          if (cached) return cached;
+
+          // Επιστρέφουμε index.html μόνο για σελίδες,
+          // ποτέ για suppliers.txt ή άλλα αρχεία.
+          if (request.mode === 'navigate') {
+            const page = await caches.match('./index.html');
+            if (page) return page;
+          }
+
+          return new Response('Offline - αρχείο μη διαθέσιμο', {
+            status: 503,
+            headers: {
+              'Content-Type': 'text/plain; charset=utf-8'
+            }
+          });
+        }
+      })()
+    );
     return;
   }
-  if(u.hostname==='unpkg.com'||u.hostname==='www.gstatic.com')e.respondWith(caches.match(e.request).then(hit=>hit||fetch(e.request).then(r=>{if(r.ok)caches.open(CACHE).then(c=>c.put(e.request,r.clone()));return r})));
+
+  if (
+    url.hostname === 'unpkg.com' ||
+    url.hostname === 'www.gstatic.com'
+  ) {
+    event.respondWith(
+      caches.match(request).then(cached => {
+        if (cached) return cached;
+
+        return fetch(request).then(async response => {
+          if (response.ok) {
+            const cache = await caches.open(CACHE);
+            await cache.put(request, response.clone());
+          }
+
+          return response;
+        });
+      })
+    );
+  }
 });
