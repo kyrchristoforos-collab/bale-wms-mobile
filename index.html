@@ -20,10 +20,20 @@
 
   <section id="main-panel" hidden>
     <nav class="main-nav">
+      <button data-tab="scan">Open Bale</button>
       <button data-tab="receipt">Παραλαβή</button>
-      <button data-tab="scan">Λύσιμο</button>
       <button data-tab="history">Παραλαβές</button>
     </nav>
+
+    <section id="scan" class="panel" hidden>
+      <h2>Open Bale</h2>
+      <div class="actions"><button id="camera-start">Start Camera · QR / Barcode</button><button id="camera-stop" class="outline" hidden>Stop Camera</button></div>
+      <div id="qr-reader"></div>
+      <p id="camera-status" class="hint">Scan the QR code or barcode on the bale label.</p>
+      <div id="scan-result" class="scan-result" hidden>Bale Code: <strong id="bale-code"></strong></div>
+      <button id="open-submit" disabled>Confirm Opening</button>
+      <p class="hint">If the code does not exist on the main PC, it will be created during synchronization according to the main PC rules.</p>
+    </section>
 
     <section id="receipt" class="panel">
       <h2>Νέα παραλαβή</h2>
@@ -43,16 +53,6 @@
         <p class="hint">Οι τελικοί κωδικοί BL και οι ετικέτες δημιουργούνται στο PC μετά τον συγχρονισμό.</p>
         <button type="submit">Καταχώριση παραλαβής</button>
       </form>
-    </section>
-
-    <section id="scan" class="panel" hidden>
-      <h2>Λύσιμο Bale</h2>
-      <div class="actions"><button id="camera-start">Άνοιγμα κάμερας QR / Barcode</button><button id="camera-stop" class="outline" hidden>Κλείσιμο κάμερας</button></div>
-      <div id="qr-reader"></div>
-      <p id="camera-status" class="hint">Σκάναρε τον κωδικό της ετικέτας.</p>
-      <div id="scan-result" class="scan-result" hidden>Κωδικός: <strong id="bale-code"></strong></div>
-      <button id="open-submit" disabled>Καταχώριση λυσίματος</button>
-      <p class="hint">Αν ο κωδικός δεν υπάρχει στο PC, θα δημιουργηθεί κατά τον συγχρονισμό σύμφωνα με τους κανόνες της εφαρμογής PC.</p>
     </section>
 
     <section id="history" class="panel" hidden>

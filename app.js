@@ -136,7 +136,7 @@ onAuthStateChanged(auth,u=>{
   $('identity').textContent=u?'Συνδεδεμένο':'';
 
   if(u){
-    tab('receipt');
+    tab('scan');
     loadSuppliers();
     syncPending();
   }
@@ -354,7 +354,7 @@ async function createAndTry(type,payload,label){
 
   try{
     await sendOne(e);
-    message('Καταχωρίστηκε και στάλθηκε στο Firebase.');
+    message(type==='OPEN_BALE'?'Bale opening sent to Firebase.':'Καταχωρίστηκε και στάλθηκε στο Firebase.');
   }catch(err){
     updateEvent(e.event_id,{
       state:'ERROR',
@@ -362,7 +362,9 @@ async function createAndTry(type,payload,label){
     });
 
     message(
-      'Αποθηκεύτηκε στη συσκευή και περιμένει συγχρονισμό. '+
+      (type==='OPEN_BALE'
+        ?'Saved on this device. Waiting to sync. '
+        :'Αποθηκεύτηκε στη συσκευή και περιμένει συγχρονισμό. ')+
       (err.message||'')
     );
   }
@@ -462,7 +464,7 @@ function found(raw){
 
   if(!code){
     $('camera-status').textContent=
-      'Ο κωδικός δεν αναγνωρίστηκε. Δοκίμασε ξανά.';
+      'Code not recognized. Please try again.';
     return;
   }
 
@@ -470,7 +472,7 @@ function found(raw){
   $('bale-code').textContent=code;
   $('scan-result').hidden=false;
   $('open-submit').disabled=false;
-  $('camera-status').textContent='Αναγνωρίστηκε QR / Barcode.';
+  $('camera-status').textContent='QR / Barcode recognized.';
 
   stopCamera();
 }
@@ -494,13 +496,13 @@ async function stopCamera(){
 
 $('camera-start').onclick=async()=>{
   if(!window.isSecureContext){
-    $('camera-status').textContent='Η κάμερα απαιτεί HTTPS.';
+    $('camera-status').textContent='Camera access requires HTTPS.';
     return;
   }
 
   if(!window.Html5Qrcode){
     $('camera-status').textContent=
-      'Δεν φορτώθηκε ο scanner. Έλεγξε τη σύνδεση και ξαναφόρτωσε.';
+      'Scanner could not load. Check your connection and reload.';
     return;
   }
 
@@ -541,11 +543,11 @@ $('camera-start').onclick=async()=>{
     scanning=true;
     $('camera-stop').hidden=false;
     $('camera-status').textContent=
-      'Στόχευσε το QR ή Barcode μέσα στο πλαίσιο.';
+      'Point the camera at the QR code or barcode.';
 
   }catch(e){
     $('camera-status').textContent=
-      'Η κάμερα δεν άνοιξε: '+e.message;
+      'Could not start camera: '+e.message;
 
     await stopCamera();
   }
@@ -555,7 +557,7 @@ $('camera-stop').onclick=stopCamera;
 
 $('open-submit').onclick=async()=>{
   if(!scannedCode){
-    message('Σκάναρε πρώτα QR ή Barcode.');
+    message('Scan a QR code or barcode first.');
     return;
   }
 
@@ -570,7 +572,7 @@ $('open-submit').onclick=async()=>{
     $('scan-result').hidden=true;
     $('bale-code').textContent='';
     $('camera-status').textContent=
-      'Σκάναρε τον επόμενο κωδικό.';
+      'Scan the next bale code.';
 
   }finally{
     b.disabled=false;
